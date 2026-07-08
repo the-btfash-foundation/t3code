@@ -60,6 +60,11 @@ import {
 } from "./orchestration.ts";
 import { ProviderInstanceId } from "./providerInstance.ts";
 import {
+  CodexSessionImportError,
+  CodexSessionImportInput,
+  CodexSessionImportResult,
+} from "./codexImport.ts";
+import {
   RelayClientInstallFailedError,
   RelayClientInstallProgressEventSchema,
   RelayClientStatusSchema,
@@ -213,6 +218,7 @@ export const WS_METHODS = {
   serverGetProcessDiagnostics: "server.getProcessDiagnostics",
   serverGetProcessResourceHistory: "server.getProcessResourceHistory",
   serverSignalProcess: "server.signalProcess",
+  codexImportSessions: "codex.importSessions",
 
   // Cloud environment methods
   cloudGetRelayClientStatus: "cloud.getRelayClientStatus",
@@ -315,6 +321,12 @@ export const WsServerSignalProcessRpc = Rpc.make(WS_METHODS.serverSignalProcess,
   payload: ServerSignalProcessInput,
   success: ServerSignalProcessResult,
   error: EnvironmentAuthorizationError,
+});
+
+export const WsCodexImportSessionsRpc = Rpc.make(WS_METHODS.codexImportSessions, {
+  payload: CodexSessionImportInput,
+  success: CodexSessionImportResult,
+  error: Schema.Union([CodexSessionImportError, EnvironmentAuthorizationError]),
 });
 
 export const WsCloudGetRelayClientStatusRpc = Rpc.make(WS_METHODS.cloudGetRelayClientStatus, {
@@ -694,6 +706,7 @@ export const WsRpcGroup = RpcGroup.make(
   WsServerGetProcessDiagnosticsRpc,
   WsServerGetProcessResourceHistoryRpc,
   WsServerSignalProcessRpc,
+  WsCodexImportSessionsRpc,
   WsCloudGetRelayClientStatusRpc,
   WsCloudInstallRelayClientRpc,
   WsSourceControlLookupRepositoryRpc,

@@ -747,6 +747,18 @@ const ThreadMessageAssistantCompleteCommand = Schema.Struct({
   createdAt: IsoDateTime,
 });
 
+const ThreadMessageAppendCommand = Schema.Struct({
+  type: Schema.Literal("thread.message.append"),
+  commandId: CommandId,
+  threadId: ThreadId,
+  messageId: MessageId,
+  role: OrchestrationMessageRole,
+  text: Schema.String,
+  turnId: Schema.NullOr(TurnId),
+  streaming: Schema.Boolean,
+  createdAt: IsoDateTime,
+});
+
 const ThreadProposedPlanUpsertCommand = Schema.Struct({
   type: Schema.Literal("thread.proposed-plan.upsert"),
   commandId: CommandId,
@@ -787,6 +799,7 @@ const ThreadRevertCompleteCommand = Schema.Struct({
 
 const InternalOrchestrationCommand = Schema.Union([
   ThreadSessionSetCommand,
+  ThreadMessageAppendCommand,
   ThreadMessageAssistantDeltaCommand,
   ThreadMessageAssistantCompleteCommand,
   ThreadProposedPlanUpsertCommand,

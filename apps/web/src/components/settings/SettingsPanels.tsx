@@ -482,6 +482,11 @@ export function GeneralSettingsPanel() {
   const updateSettings = useUpdatePrimarySettings();
   const observability = useAtomValue(primaryServerObservabilityAtom);
   const serverProviders = useAtomValue(primaryServerProvidersAtom);
+  const primaryEnvironment = usePrimaryEnvironment();
+  const importCodexSessions = useAtomCommand(serverEnvironment.importCodexSessions, {
+    reportFailure: false,
+  });
+  const [isImportingCodexSessions, setIsImportingCodexSessions] = useState(false);
   const diagnosticsDescription = formatDiagnosticsDescription({
     localTracingEnabled: observability?.localTracingEnabled ?? false,
     otlpTracesEnabled: observability?.otlpTracesEnabled ?? false,
@@ -512,10 +517,65 @@ export function GeneralSettingsPanel() {
     settings.textGenerationModelSelection ?? null,
     DEFAULT_UNIFIED_SETTINGS.textGenerationModelSelection ?? null,
   );
+  const handleImportCodexSessions = useCallback(() => {
+    if (!primaryEnvironment || isImportingCodexSessions) {
+      return;
+    }
+    setIsImportingCodexSessions(true);
+    void (async () => {
+      const result = await importCodexSessions({
+        environmentId: primaryEnvironment.environmentId,
+        input: {},
+      });
+      setIsImportingCodexSessions(false);
+      if (result._tag === "Success") {
+        const summary = result.value;
+        toastManager.add(
+          stackedThreadToast({
+            type: summary.failed > 0 ? "warning" : "success",
+            title: "Codex sessions imported",
+            description: `${summary.imported} imported, ${summary.skipped} skipped, ${summary.failed} failed from ${summary.scanned} scanned.`,
+          }),
+        );
+        return;
+      }
+      if (!isAtomCommandInterrupted(result)) {
+        const error = squashAtomCommandFailure(result);
+        toastManager.add(
+          stackedThreadToast({
+            type: "error",
+            title: "Failed to import Codex sessions",
+            description: error instanceof Error ? error.message : "An error occurred.",
+          }),
+        );
+      }
+    })();
+  }, [importCodexSessions, isImportingCodexSessions, primaryEnvironment]);
 
   return (
     <SettingsPageContainer>
       <SettingsSection title="General">
+        <SettingsRow
+          title="Import Codex sessions"
+          description="Import saved conversations from ~/.codex/sessions into the thread list."
+          control={
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              disabled={!primaryEnvironment || isImportingCodexSessions}
+              onClick={handleImportCodexSessions}
+            >
+              {isImportingCodexSessions ? (
+                <LoaderIcon className="size-3.5 animate-spin" />
+              ) : (
+                <ArchiveIcon className="size-3.5" />
+              )}
+              <span>Import</span>
+            </Button>
+          }
+        />
+
         <SettingsRow
           title="Theme"
           description="Choose how T3 Code looks across the app."
